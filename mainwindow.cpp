@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+int delay_ms = 0;
 double firstNum;                        //глобал чтобы equal_pressed видел значение, которое инициализируется в binary_operation_pressed. Я знаю что это плохой тон
 bool userTypingSecondDigit = false;     //нужна для того, чтобы пользователь мог вводить несколько чисел, после бинарного оператора
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -44,6 +46,12 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_set_delay_clicked()
+{
+    QString temp = ui->enter_dalay->text();
+    delay_ms = temp.toInt();
 }
 
 void MainWindow::digit_pressed()
@@ -141,18 +149,21 @@ void MainWindow::equal_pressed()
     if (ui->pushButton_add->isChecked())
     {
         qDebug() << "New request: " << firstNum << " + " << secondNum;
-        displayNumber = compute(add,firstNum,secondNum);
-        DisplayText = QString::number(displayNumber,'g',15);
+        std::thread thread_2([&displayNumber,secondNum,this](){displayNumber = compute(add,firstNum,secondNum); });
+        thread_2.join();                                        // это конечно неправильно, выходит тоже самое что и в одном потоке. Где-то нужно создать std::queue мб и туда помещать запросы
+        DisplayText = QString::number(displayNumber,'g',15);    // только как.
         ui->display->setText(DisplayText);
         ui->pushButton_add->setChecked(false);
+        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_subtract->isChecked())
     {
         qDebug() << "New request: " << firstNum << " - " << secondNum;
-        displayNumber = compute(substract,firstNum,secondNum);;
+        displayNumber = compute(substract,firstNum,secondNum);
         DisplayText = QString::number(displayNumber,'g',15);
         ui->display->setText(DisplayText);
         ui->pushButton_subtract->setChecked(false);
+        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_mult->isChecked())
     {
@@ -161,6 +172,7 @@ void MainWindow::equal_pressed()
         DisplayText = QString::number(displayNumber,'g',15);
         ui->display->setText(DisplayText);
         ui->pushButton_mult->setChecked(false);
+        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_divide->isChecked())
     {
@@ -172,6 +184,7 @@ void MainWindow::equal_pressed()
             DisplayText = QString::number(displayNumber,'g',15);
             ui->display->setText(DisplayText);
             ui->pushButton_divide->setChecked(false);
+            qDebug() << "Result: " << displayNumber;
         }
         catch (int e)
         {
@@ -188,22 +201,24 @@ double MainWindow::compute(int Type, double OperandA, double OperandB)
     switch (Type) {
         case add:
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             return OperandA + OperandB;
         }
         case substract:
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             return OperandA - OperandB;
         }
         case mult:
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             return OperandA * OperandB;
         }
         case divide:
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             return OperandA / OperandB;
         }
     }
 }
-
-
 

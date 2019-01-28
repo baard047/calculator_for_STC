@@ -25,6 +25,8 @@ private:
     Ui::MainWindow *ui;
 
 private slots:
+    void on_set_delay_clicked();
+
     void digit_pressed();
     void decimal_pressed();
     void unary_buttons_pressed();
