@@ -1,10 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-int delay_ms = 0;
-double firstNum;                        //глобал чтобы equal_pressed видел значение, которое инициализируется в binary_operation_pressed. Я знаю что это плохой тон
-bool userTypingSecondDigit = false;     //нужна для того, чтобы пользователь мог вводить несколько чисел, после бинарного оператора
-
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -57,8 +53,6 @@ void MainWindow::on_set_delay_clicked()
 void MainWindow::digit_pressed()
 {
     QPushButton *button = (QPushButton*)sender();
-    double displayNumber;
-    QString DisplayText;
 
     if ((ui->pushButton_add->isChecked() || ui->pushButton_subtract->isChecked() ||
            ui->pushButton_mult->isChecked() || ui->pushButton_divide->isChecked()) && (!userTypingSecondDigit))
@@ -99,8 +93,6 @@ void MainWindow::decimal_pressed()
 void MainWindow::unary_buttons_pressed()
 {
     QPushButton *button = (QPushButton*)sender();
-    double displayNumber;
-    QString DisplayText;
 
     if (button->text() == "+/-")
     {
@@ -140,19 +132,19 @@ void MainWindow::clear_pressed()
     ui->display->setText("0");
 }
 
+
 void MainWindow::equal_pressed()
 {
-    double displayNumber;
-    double secondNum = ui->display->text().toDouble();
-    QString DisplayText;
 
-    if (ui->pushButton_add->isChecked())
+    secondNum = ui->display->text().toDouble();                                 //secondNum = введенный текст
+
+
+    if (ui->pushButton_add->isChecked())                                        //если перед нажатием на равно была нажата кнопка +
     {
         qDebug() << "New request: " << firstNum << " + " << secondNum;
-        std::thread thread_2([&displayNumber,secondNum,this](){displayNumber = compute(add,firstNum,secondNum); });
-        thread_2.join();                                        // это конечно неправильно, выходит тоже самое что и в одном потоке. Где-то нужно создать std::queue мб и туда помещать запросы
-        DisplayText = QString::number(displayNumber,'g',15);    // только как.
-        ui->display->setText(DisplayText);
+        displayNumber = compute(add,firstNum,secondNum);;                       //инициализируется результат вычисслений функцией compute
+        DisplayText = QString::number(displayNumber,'g',15);                    //Помещаем в DisplayText результат вычислений
+        ui->display->setText(DisplayText);                                      //выводим текст на дисплей
         ui->pushButton_add->setChecked(false);
         qDebug() << "Result: " << displayNumber;
     }
@@ -198,27 +190,17 @@ void MainWindow::equal_pressed()
 
 double MainWindow::compute(int Type, double OperandA, double OperandB)
 {
-    switch (Type) {
-        case add:
+        switch (Type)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-            return OperandA + OperandB;
+            case add:       {return OperandA + OperandB; }
+
+            case substract: {return OperandA - OperandB; }
+
+            case mult:      {return OperandA * OperandB; }
+
+            case divide:    {return OperandA / OperandB; }
         }
-        case substract:
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-            return OperandA - OperandB;
-        }
-        case mult:
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-            return OperandA * OperandB;
-        }
-        case divide:
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-            return OperandA / OperandB;
-        }
-    }
+
+    return 1;
 }
 

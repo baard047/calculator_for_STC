@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <thread>
+#include <QQueue>
 
 enum operationType { add, substract, mult, divide };
 
@@ -19,10 +20,19 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    double compute( int Type, double OperandA, double OperandB);                     //функция вычислений
+    double compute( int Type, double OperandA, double OperandB);       //функция вычислений
 
 private:
     Ui::MainWindow *ui;
+
+    int delay_ms = 0;
+    double firstNum;
+    double secondNum;
+
+    double displayNumber;                                              //сюда записывается результат вычислений
+    QString DisplayText;                                               //текстовая переменная, которую видет пользователь на дисплее
+    bool userTypingSecondDigit = false;                                //нужна для того, чтобы пользователь мог вводить несколько чисел, после бинарного оператора
+
 
 private slots:
     void on_set_delay_clicked();
