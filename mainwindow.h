@@ -6,6 +6,8 @@
 #include <thread>
 #include <QQueue>
 
+#include "calculateprocessthread.h"
+
 enum operationType { add, substract, mult, divide };
 
 namespace Ui {
@@ -20,7 +22,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    double compute( int Type, double OperandA, double OperandB);       //функция вычислений
+    CalculateProcessThread* m_thread;
 
 private:
     Ui::MainWindow *ui;
@@ -43,6 +45,8 @@ private slots:
     void binary_operation_pressed();
     void clear_pressed();
     void equal_pressed();
+
+    void displayResult(double result);
 };
 
 #endif // MAINWINDOW_H

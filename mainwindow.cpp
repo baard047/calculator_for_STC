@@ -37,17 +37,35 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->pushButton_subtract->setCheckable(true);
     ui->pushButton_mult->setCheckable(true);
     ui->pushButton_divide->setCheckable(true);
+
+
+    //thread config:
+    this->m_thread = new CalculateProcessThread();
+
+    connect(m_thread,SIGNAL(processDone(double)),this,SLOT(displayResult(double)));
+
+    this->m_thread->start();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    m_thread->terminate();
+    delete m_thread;
+}
+
+void MainWindow::displayResult(double result)
+{
+    qDebug() << "Result from another thread: " << result;
+    DisplayText = QString::number(result,'g',15);
+    ui->display->setText(DisplayText);
 }
 
 void MainWindow::on_set_delay_clicked()
 {
     QString temp = ui->enter_dalay->text();
     delay_ms = temp.toInt();
+    qDebug() << "Delay now is: " << delay_ms << "ms";
 }
 
 void MainWindow::digit_pressed()
@@ -122,6 +140,7 @@ void MainWindow::binary_operation_pressed()
 
 void MainWindow::clear_pressed()
 {
+    //qDebug() << "Clear pressed.";
     ui->pushButton_add->setChecked(false);
     ui->pushButton_subtract->setChecked(false);
     ui->pushButton_mult->setChecked(false);
@@ -136,71 +155,53 @@ void MainWindow::clear_pressed()
 void MainWindow::equal_pressed()
 {
 
-    secondNum = ui->display->text().toDouble();                                 //secondNum = введенный текст
+    secondNum = ui->display->text().toDouble();
 
-
-    if (ui->pushButton_add->isChecked())                                        //если перед нажатием на равно была нажата кнопка +
+    if (ui->pushButton_add->isChecked())
     {
         qDebug() << "New request: " << firstNum << " + " << secondNum;
-        displayNumber = compute(add,firstNum,secondNum);;                       //инициализируется результат вычисслений функцией compute
-        DisplayText = QString::number(displayNumber,'g',15);                    //Помещаем в DisplayText результат вычислений
-        ui->display->setText(DisplayText);                                      //выводим текст на дисплей
+
+        std::lock_guard<std::mutex> guard(*QueueRequest::m1);
+        QueueRequest::requests->push(Request(add, firstNum, secondNum, delay_ms));
+
         ui->pushButton_add->setChecked(false);
-        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_subtract->isChecked())
     {
         qDebug() << "New request: " << firstNum << " - " << secondNum;
-        displayNumber = compute(substract,firstNum,secondNum);
-        DisplayText = QString::number(displayNumber,'g',15);
-        ui->display->setText(DisplayText);
+
+        std::lock_guard<std::mutex> guard(*QueueRequest::m1);
+        QueueRequest::requests->push(Request(substract, firstNum, secondNum, delay_ms));
+
         ui->pushButton_subtract->setChecked(false);
-        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_mult->isChecked())
     {
         qDebug() << "New request: " << firstNum << " * " << secondNum;
-        displayNumber = compute(mult,firstNum,secondNum);;
-        DisplayText = QString::number(displayNumber,'g',15);
-        ui->display->setText(DisplayText);
+
+        std::lock_guard<std::mutex> guard(*QueueRequest::m1);
+        QueueRequest::requests->push(Request(mult, firstNum, secondNum, delay_ms));
+
         ui->pushButton_mult->setChecked(false);
-        qDebug() << "Result: " << displayNumber;
     }
     else if (ui->pushButton_divide->isChecked())
     {
         qDebug() << "New request: " << firstNum << " / " << secondNum;
         try
         {
-            displayNumber = compute(divide,firstNum,secondNum);;
             if (secondNum == 0.0) {throw 1; }
-            DisplayText = QString::number(displayNumber,'g',15);
-            ui->display->setText(DisplayText);
+
+            std::lock_guard<std::mutex> guard(*QueueRequest::m1);
+            QueueRequest::requests->push(Request(divide, firstNum, secondNum, delay_ms));
+
             ui->pushButton_divide->setChecked(false);
-            qDebug() << "Result: " << displayNumber;
         }
         catch (int e)
         {
             qDebug() << "Error: You cannot divide by zero!";
         }
-        ui->pushButton_divide->setChecked(false);          //чтобы можно было продолжить пользоваться программой, после деления на 0
+        ui->pushButton_divide->setChecked(false);                            //чтобы можно было продолжить пользоваться программой, после деления на 0
     }
 
     userTypingSecondDigit = false;
 }
-
-double MainWindow::compute(int Type, double OperandA, double OperandB)
-{
-        switch (Type)
-        {
-            case add:       {return OperandA + OperandB; }
-
-            case substract: {return OperandA - OperandB; }
-
-            case mult:      {return OperandA * OperandB; }
-
-            case divide:    {return OperandA / OperandB; }
-        }
-
-    return 1;
-}
-
